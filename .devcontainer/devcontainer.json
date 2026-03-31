@@ -1,0 +1,37 @@
+{
+  "name": "Kotlin Compiler Plugin Dev Environment",
+  "image": "mcr.microsoft.com/devcontainers/java:17-bullseye",
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:1": {
+      "configureZshAsDefaultShell": true
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "fwcd.kotlin",
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-gradle",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-xml",
+        "redhat.vscode-yaml"
+      ]
+    }
+  },
+
+  "mounts": [
+    "source=${localEnv:HOME}/.gradle,target=/home/vscode/.gradle,type=bind"
+  ],
+
+  "containerEnv": {
+    "GRADLE_USER_HOME": "/home/vscode/.gradle",
+    "AUTO_PUBLISH_MAVEN_REPO": "false"
+  },
+
+  "postCreateCommand": "chmod +x gradlew && ./gradlew classes",
+
+  "remoteUser": "vscode"
+}

@@ -1,0 +1,25 @@
+<idea-plugin>
+
+    <depends>org.jetbrains.kotlin</depends>
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <fir.extensions.firExtensionRegistrar implementation="ink.iowoi.kotlin.idea.plugin.captureupperarg.IdeExtensionRegistrar" />
+        <codeinsight.quickfix.registrar implementation="ink.iowoi.kotlin.idea.plugin.captureupperarg.QuickFixRegistrar"/>
+        <supportsKotlinPluginMode supportsK2="true" />
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <codeInsight.declarativeInlayProvider
+                language="kotlin"
+                implementationClass="ink.iowoi.kotlin.idea.plugin.captureupperarg.InlayHintsProvider"
+                isEnabledByDefault="true"
+                group="CODE_VISION_GROUP"
+                bundle="message.bundles"
+                providerId="${inlay_provider_id}"
+                nameKey="name"
+                descriptionKey="desc"
+        />
+
+    </extensions>
+</idea-plugin>
