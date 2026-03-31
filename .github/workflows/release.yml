@@ -29,20 +29,64 @@ jobs:
       - name: Extract Project Info
         id: info
         run: |
-          VERSION=$(grep "root.version=" gradle.properties | cut -d'=' -f2)
-          G_ID=$(grep "gradle.plugin.id=" gradle.properties | cut -d'=' -f2)
+          VERSION=$(grep "^root.version=" gradle.properties | cut -d'=' -f2 | xargs)
+          GROUP=$(grep "^root.group.id=" gradle.properties | cut -d'=' -f2 | xargs)
+          GRADLE_PLUGIN_ID=$(grep "^gradle.plugin.id=" gradle.properties | cut -d'=' -f2 | xargs)
+          GRADLE_PLUGIN_VERSION=$(grep "^gradle.plugin.version=" gradle.properties | cut -d'=' -f2 | xargs)
+
+          C_ARTIFACT=$(grep "^compiler.plugin.artifact.id=" gradle.properties | cut -d'=' -f2 | xargs)
+          A_ARTIFACT=$(grep "^compiler.plugin.annotation.artifact.id=" gradle.properties | cut -d'=' -f2 | xargs)
+          C_VERSION=$(grep "^compiler.plugin.version=" gradle.properties | cut -d'=' -f2 | xargs)
+
+          COMPILER_COORDINATE_PREFIX="$GROUP:$C_ARTIFACT"
+          ANNOTATION_COORDINATE_PREFIX="$GROUP:$A_ARTIFACT"
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "gradle_id=$G_ID" >> $GITHUB_OUTPUT
+          echo "gradle_id=$GRADLE_PLUGIN_ID" >> $GITHUB_OUTPUT
+          echo "gradle_version=$GRADLE_PLUGIN_VERSION" >> $GITHUB_OUTPUT
+          echo "compiler_version=$C_VERSION" >> $GITHUB_OUTPUT
+          echo "compiler_coordinate_prefix=$COMPILER_COORDINATE_PREFIX" >> $GITHUB_OUTPUT
+          echo "annotation_coordinate_prefix=$ANNOTATION_COORDINATE_PREFIX" >> $GITHUB_OUTPUT
 
       - name: Update README Version Hooks
-        env:
-          REPLACE_VERSION_HOOK: "replace-version"
         run: |
+          update_gradle_dependency_like_plugin_version() {
+              sed -i "s|\($1(\"$2:\)[^\"]*\(.*\)|\1$3\2|g" "$4"
+          }
+
+          update_gradle_plugin_like_version() {
+              sed -i "s|\(id(\"$1\")\s*version\s*\"\)[^\"]*\(.*\)|\1$2\2|g" "$3"
+          }
+
+          update_version_by_tag() {
+              local start_tag="<!-- replace $1 version -->"
+              local end_tag="<!-- end replacement -->"
+              local esc_start=$(echo "$start_tag" | sed 's/[*.]/\\&/g')
+              local esc_end=$(echo "$end_tag" | sed 's/[*.]/\\&/g')
+              sed -i "s|$esc_start.*$esc_end|$start_tag \`$2\` $end_tag|g" "$3"
+          }
+
           VERSION="${{ steps.info.outputs.version }}"
+          GRADLE_PLUGIN_ID="${{ steps.info.outputs.gradle_id }}"
+          GRADLE_PLUGIN_VERSION="${{ steps.info.outputs.gradle_version }}"
+          COMPILER_VERSION="${{ steps.info.outputs.compiler_version }}"
+          COMPILER_COORDINATE_PREFIX="${{ steps.info.outputs.compiler_coordinate_prefix }}"
+          ANNOTATION_COORDINATE_PREFIX="${{ steps.info.outputs.annotation_coordinate_prefix }}"
+
           find . -name "README.md" -type f | while read -r readme_file; do
-            echo "Processing $readme_file..."
-            sed -i "s/version \"[^\"]*\" \/\* $GRADLE_HOOK \*\//version \"$VERSION\" \/\* $GRADLE_HOOK \*\//g" "$readme_file"
-            sed -i "s/version = .* # $REPLACE_VERSION_HOOK/version = \"$VERSION\" # $REPLACE_VERSION_HOOK/g" "$readme_file"
+            update_gradle_plugin "$GRADLE_PLUGIN_ID" "$GRADLE_PLUGIN_VERSION" "$readme_file"
+
+            update_gradle_dependency "api" "$ANNOTATION_COORDINATE_PREFIX" "$COMPILER_VERSION" "$readme_file"
+            update_gradle_dependency "compileOnly" "$ANNOTATION_COORDINATE_PREFIX" "$COMPILER_VERSION" "$readme_file"
+            update_gradle_dependency "implementation" "$ANNOTATION_COORDINATE_PREFIX" "$COMPILER_VERSION" "$readme_file"
+
+            update_gradle_dependency "api" "$COMPILER_COORDINATE_PREFIX" "$COMPILER_VERSION" "$readme_file"
+            update_gradle_dependency "compileOnly" "$COMPILER_COORDINATE_PREFIX" "$COMPILER_VERSION" "$readme_file"
+            update_gradle_dependency "implementation" "$COMPILER_COORDINATE_PREFIX" "$COMPILER_VERSION" "$readme_file"
+
+            update_version_by_tag "gradle plugin" "$GRADLE_PLUGIN_VERSION" "$readme_file"
+            update_version_by_tag "compiler plugin" "$COMPILER_VERSION" "$readme_file"
+            update_version_by_tag "annotation library" "$COMPILER_VERSION" "$readme_file"
           done
 
       - name: Commit Changes
