@@ -26,8 +26,13 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Run Tests
-        run: chmod +x ./gradlew && ./gradlew test --stacktrace
+      - name: Prepare and Run Tests
+        run: |
+          chmod +x ./gradlew
+          if [ ! -f secret.yml ]; then
+            cp secret.yml.sample secret.yml
+          fi
+          ./gradlew test --stacktrace
 
   codeql:
     name: CodeQL Analysis
@@ -41,6 +46,11 @@ jobs:
         with:
           languages: java-kotlin
       - name: Build for Analysis
-        run: chmod +x ./gradlew && ./gradlew classes
+        run: |
+          chmod +x ./gradlew
+          if [ ! -f secret.yml ]; then
+            cp secret.yml.sample secret.yml
+          fi
+          ./gradlew classes
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
