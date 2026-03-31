@@ -1,5 +1,6 @@
 import java.util.Properties
 import org.yaml.snakeyaml.Yaml
+import java.util.Base64
 
 buildscript {
     repositories { mavenCentral() }
@@ -116,17 +117,22 @@ subprojects {
         }
 
         pluginManager.withPlugin("signing") {
-            val key = findSecret("GPG_PRIVATE_KEY", "gpg.privateKey")
+            val rawKey = findSecret("GPG_PRIVATE_KEY", "gpg.privateKey")
             val password = findSecret("GPG_PASSWORD", "gpg.password")
 
-            if (key.isPresent) {
+            if (rawKey.isPresent) {
                 configure<SigningExtension> {
-                    useInMemoryPgpKeys(key.get(), password.getOrNull())
+                    val key = if (rawKey.trim().startsWith("-----BEGIN")) {
+                        rawKey.get()
+                    } else {
+                        String(Base64.getDecoder().decode(rawKey.get().trim()))
+                    }
+                    useInMemoryPgpKeys(key, password.getOrNull())
                     val publishing = extensions.getByType<PublishingExtension>()
                     sign(publishing.publications)
                 }
                 tasks.withType<Sign>().configureEach {
-                    onlyIf { key.isPresent }
+                    onlyIf { rawKey.isPresent }
                 }
             }
         }
