@@ -122,14 +122,18 @@ subprojects {
 
             if (rawKey.isPresent) {
                 configure<SigningExtension> {
-                    val key = if (rawKey.trim().startsWith("-----BEGIN")) {
-                        rawKey.get()
-                    } else {
-                        String(Base64.getDecoder().decode(rawKey.get().trim()))
+                    val key = rawKey.get()
+                    if (key != null) {
+                        val finalKey = if (key.trim().startsWith("-----BEGIN")) {
+                            key
+                        } else {
+                            String(Base64.getDecoder().decode(key.trim()))
+                        }
+
+                        useInMemoryPgpKeys(finalKey, password.getOrNull())
+                        val publishing = extensions.getByType<PublishingExtension>()
+                        sign(publishing.publications)
                     }
-                    useInMemoryPgpKeys(key, password.getOrNull())
-                    val publishing = extensions.getByType<PublishingExtension>()
-                    sign(publishing.publications)
                 }
                 tasks.withType<Sign>().configureEach {
                     onlyIf { rawKey.isPresent }
