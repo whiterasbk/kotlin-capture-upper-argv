@@ -1,0 +1,39 @@
+name: Code Analysis
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - '**/README.md'
+      - '**.md'
+      - '.gitignore'
+      - '.github/workflows/**'
+      - '.devcontainer/devcontainer.json'
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      contains(github.event.head_commit.message, '[analysis]')
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+      - name: Build for Analysis
+        run: |
+          chmod +x ./gradlew
+          if [ ! -f secret.yml ]; then
+            cp secret.yml.sample secret.yml
+          fi
+          ./gradlew classes --stacktrace --max-workers=1
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
