@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     `maven-publish`
+    signing
 }
 
 val rootGroupId = providers.gradleProperty("root.group.id").get()
