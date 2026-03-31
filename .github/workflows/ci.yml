@@ -4,7 +4,7 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
-      - '../../README.md'
+      - '**/README.md'
       - '**.md'
       - '.gitignore'
       - '.github/workflows/**'
@@ -78,6 +78,6 @@ jobs:
           if [ ! -f secret.yml ]; then
             cp secret.yml.sample secret.yml
           fi
-          ./gradlew classes
+          ./gradlew classes --stacktrace --max-workers=1
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
