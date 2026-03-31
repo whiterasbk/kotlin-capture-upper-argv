@@ -24,7 +24,7 @@
     "AUTO_PUBLISH_MAVEN_REPO": "false"
   },
 
-  "postCreateCommand": "chmod +x gradlew && ./gradlew classes",
+  "postCreateCommand": "chmod +x gradlew && [ ! -f secret.yml ] && cp secret.yml.sample secret.yml || echo 'secret.yml created!' && ./gradlew classes",
 
   "remoteUser": "vscode"
 }
