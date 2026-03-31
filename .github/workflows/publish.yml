@@ -19,8 +19,7 @@ jobs:
   publish:
     if: |
       github.actor == 'whiterasbk' && (
-        contains(github.event.head_commit.message, '[publish]') ||
-        contains(github.event.head_commit.message, '[release]') ||
+        contains(github.event.head_commit.message, '[publish') ||
         github.event_name == 'workflow_dispatch'
       )
     runs-on: ubuntu-latest
@@ -46,6 +45,10 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      - name: Run Tests Before Publish
+        run: |
+          chmod +x ./gradlew && ./gradlew test --stacktrace
+
       - name: Determine Publish Tasks
         id: tasks
         run: |
@@ -53,7 +56,7 @@ jobs:
           MSG=$(echo "$MSG" | tr '[:upper:]' '[:lower:]')
           TASKS=""
           
-          if [[ "$MSG" == *"[publish]"* || "$MSG" == *"[release]"* || "${{ github.event.inputs.target }}" == "all" ]]; then
+          if [[ "$MSG" == *"[publish all]"* || "${{ github.event.inputs.target }}" == "all" ]]; then
             TASKS="publishAllToSonatypeAndCommit"
           else
             if [[ "$MSG" == *"[publish compiler]"* ]]; then TASKS="$TASKS :compiler:publishToSonatypeAndCommit"; fi
