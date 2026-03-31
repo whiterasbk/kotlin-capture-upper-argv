@@ -26,7 +26,7 @@ jobs:
           cache: 'gradle'
 
       - name: Run Tests
-        run: ./gradlew test --stacktrace
+        run: chmod +x ./gradlew && ./gradlew test --stacktrace
 
   codeql:
     name: CodeQL Analysis
@@ -40,6 +40,6 @@ jobs:
         with:
           languages: java-kotlin
       - name: Build for Analysis
-        run: ./gradlew classes
+        run: chmod +x ./gradlew && ./gradlew classes
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
