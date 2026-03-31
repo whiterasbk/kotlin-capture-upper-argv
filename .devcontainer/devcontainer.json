@@ -2,13 +2,6 @@
   "name": "Kotlin Compiler Plugin Dev Environment",
   "image": "mcr.microsoft.com/devcontainers/java:17-bullseye",
 
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:1": {
-      "configureZshAsDefaultShell": true
-    },
-    "ghcr.io/devcontainers/features/docker-in-docker:1": {}
-  },
-
   "customizations": {
     "vscode": {
       "extensions": [
