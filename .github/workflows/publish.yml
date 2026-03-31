@@ -45,32 +45,55 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Run Tests Before Publish
-        run: |
-          chmod +x ./gradlew && ./gradlew test --stacktrace
-
-      - name: Determine Publish Tasks
-        id: tasks
+      - name: Determine Publish & Test Tasks
+        id: determine
         run: |
           MSG="${{ github.event.head_commit.message }}"
           MSG=$(echo "$MSG" | tr '[:upper:]' '[:lower:]')
-          TASKS=""
+          TARGET="${{ github.event.inputs.target }}"
+          PUBLISH_TASKS=""
+          TEST_TASKS=""
           
-          if [[ "$MSG" == *"[publish all]"* || "${{ github.event.inputs.target }}" == "all" ]]; then
-            TASKS="publishAllToSonatypeAndCommit"
+          if [[ "$MSG" == *"[publish all]"* || "$TARGET" == "all" ]]; then
+            PUBLISH_TASKS="publishAllToSonatypeAndCommit"
+            TEST_TASKS="test"
           else
-            if [[ "$MSG" == *"[publish compiler]"* ]]; then TASKS="$TASKS :compiler:publishToSonatypeAndCommit"; fi
-            if [[ "$MSG" == *"[publish annotations]"* ]]; then TASKS="$TASKS :annotations:publishToSonatypeAndCommit"; fi
-            if [[ "$MSG" == *"[publish idea-plugin]"* ]]; then TASKS="$TASKS :idea-plugin:publishPlugin"; fi
-            if [[ "$MSG" == *"[publish gradle-plugin]"* ]]; then TASKS="$TASKS :gradle-plugin:publishPlugins"; fi
+            if [[ "$MSG" == *"[publish compiler]"* || "$TARGET" == "compiler" ]]; then
+              PUBLISH_TASKS="$PUBLISH_TASKS :compiler:publishToSonatypeAndCommit"
+              TEST_TASKS="$TEST_TASKS :compiler:test"
+            fi
+            if [[ "$MSG" == *"[publish annotations]"* || "$TARGET" == "annotations" ]]; then 
+              PUBLISH_TASKS="$PUBLISH_TASKS :annotations:publishToSonatypeAndCommit" 
+              TEST_TASKS="$TEST_TASKS :annotations:test"
+            fi
+            if [[ "$MSG" == *"[publish idea-plugin]"* || "$TARGET" == "idea-plugin" ]]; then 
+              PUBLISH_TASKS="$PUBLISH_TASKS :idea-plugin:publishPlugin"
+              TEST_TASKS="$TEST_TASKS :idea-plugin:test"
+            fi
+            if [[ "$MSG" == *"[publish gradle-plugin]"* || "$TARGET" == "gradle-plugin" ]]; then 
+              PUBLISH_TASKS="$PUBLISH_TASKS :gradle-plugin:publishPlugins"
+              TEST_TASKS="$TEST_TASKS :gradle-plugin:test"
+            fi
           fi
           
-          echo "cmd=$TASKS" >> $GITHUB_OUTPUT
+          echo "publish_cmd=$(echo $PUBLISH_TASKS | xargs)" >> $GITHUB_OUTPUT
+          echo "test_cmd=$(echo ${TEST_TASKS:-test} | xargs)" >> $GITHUB_OUTPUT
+
+      - name: Run Tests Before Publish
+        run: |
+          chmod +x ./gradlew
+          if [ -n "${{ steps.determine.outputs.publish_cmd }}" ]; then
+            echo "Running specific tests: ${{ steps.determine.outputs.test_cmd }}"
+            ./gradlew ${{ steps.determine.outputs.test_cmd }} --stacktrace
+          else
+            echo "No publish tasks, running default tests."
+            ./gradlew test --stacktrace
+          fi
 
       - name: Execute Publish
         run: |
-          if [ -z "${{ steps.tasks.outputs.cmd }}" ]; then
+          if [ -z "${{ steps.determine.outputs.publish_cmd }}" ]; then
             echo "No specific publish tasks found in message."
           else
-            ./gradlew ${{ steps.tasks.outputs.cmd }} --no-daemon
+            ./gradlew ${{ steps.determine.outputs.publish_cmd }} --no-daemon
           fi
