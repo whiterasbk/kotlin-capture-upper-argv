@@ -26,6 +26,29 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      - name: Prepare GPG Secrets
+        id: prep
+        run: |
+          TMP_QUOTE="Good_morning_and_in_cass_I_dont_see_you_good_afternoon_good_evening_and_good_night"
+          if [ -z "${{ env.GPG_PRIVATE_KEY }}" ]; then
+            echo "Environment variable GPG_PRIVATE_KEY not found. Generating a temporary one..."
+            gpg --batch --passphrase "$TMP_QUOTE" --quick-gen-key "CI Builder <ci@example.com>" default default never
+            KEY_ID=$(gpg --list-secret-keys --keyid-format SHORT | grep 'sec' | awk '{print $2}' | cut -d'/' -f2)
+            echo "GPG_PRIVATE_KEY<<EOF" >> $GITHUB_ENV
+            gpg --armor --export-secret-keys $KEY_ID >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+            echo "GPG_PASSWORD=$TMP_QUOTE" >> $GITHUB_ENV
+          else
+            echo "GPG_PRIVATE_KEY is already set by GitHub Secrets. Skipping generation."
+          fi
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v7
+        with:
+          gpg_private_key: ${{ env.GPG_PRIVATE_KEY }}
+          passphrase: ${{ env.GPG_PASSWORD }}
+          trust_level: 5
+
       - name: Prepare and Run Tests
         run: |
           chmod +x ./gradlew
