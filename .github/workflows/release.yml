@@ -1,0 +1,70 @@
+name: Create Release & Sync README
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - '**/README.md'
+      - '**.md'
+      - '.gitignore'
+      - '.github/workflows/**'
+      - '.devcontainer/devcontainer.json'
+  workflow_dispatch:
+
+jobs:
+  release:
+    if: |
+      github.actor == 'whiterasbk' && (
+        contains(github.event.head_commit.message, '[release]') ||
+        github.event_name == 'workflow_dispatch'
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Project Info
+        id: info
+        run: |
+          VERSION=$(grep "root.version=" gradle.properties | cut -d'=' -f2)
+          G_ID=$(grep "gradle.plugin.id=" gradle.properties | cut -d'=' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "gradle_id=$G_ID" >> $GITHUB_OUTPUT
+
+      - name: Update README Version Hooks
+        env:
+          REPLACE_VERSION_HOOK: "replace-version"
+        run: |
+          VERSION="${{ steps.info.outputs.version }}"
+          find . -name "README.md" -type f | while read -r readme_file; do
+            echo "Processing $readme_file..."
+            sed -i "s/version \"[^\"]*\" \/\* $GRADLE_HOOK \*\//version \"$VERSION\" \/\* $GRADLE_HOOK \*\//g" "$readme_file"
+            sed -i "s/version = .* # $REPLACE_VERSION_HOOK/version = \"$VERSION\" # $REPLACE_VERSION_HOOK/g" "$readme_file"
+          done
+
+      - name: Commit Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "github-actions[bot]"
+          git add "**/README.md"
+          git commit -m "chore: update all READMEs to v${{ steps.info.outputs.version }} [skip ci]" || echo "No changes to commit"
+          git push
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.info.outputs.version }}
+          name: Release v${{ steps.info.outputs.version }}
+          body: |
+            Automated release for version ${{ steps.info.outputs.version }}
+            
+            ### Artifacts
+            - Maven Group: `ink.iowoi.kotlin`
+            - Gradle Plugin: `${{ steps.info.outputs.gradle_id }}`
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

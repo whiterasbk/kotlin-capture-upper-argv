@@ -1,0 +1,73 @@
+name: Strategic Publish
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - '**/README.md'
+      - '**.md'
+      - '.gitignore'
+      - '.github/workflows/**'
+      - '.devcontainer/devcontainer.json'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Manual Target (all, compiler, annotations, idea, gradle)'
+        default: 'all'
+
+jobs:
+  publish:
+    if: |
+      github.actor == 'whiterasbk' && (
+        contains(github.event.head_commit.message, '[publish]') ||
+        contains(github.event.head_commit.message, '[release]') ||
+        github.event_name == 'workflow_dispatch'
+      )
+    runs-on: ubuntu-latest
+    env:
+      AUTO_PUBLISH_MAVEN_REPO: true
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
+      JB_MARKETPLACE_TOKEN: ${{ secrets.JB_MARKETPLACE_TOKEN }}
+      JB_CERTIFICATE_CHAIN: ${{ secrets.JB_CERTIFICATE_CHAIN }}
+      JB_PRIVATE_KEY: ${{ secrets.JB_PRIVATE_KEY }}
+      JB_PASSWORD: ${{ secrets.JB_PASSWORD }}
+      GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
+      GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Determine Publish Tasks
+        id: tasks
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+          MSG=$(echo "$MSG" | tr '[:upper:]' '[:lower:]')
+          TASKS=""
+          
+          if [[ "$MSG" == *"[publish]"* || "$MSG" == *"[release]"* || "${{ github.event.inputs.target }}" == "all" ]]; then
+            TASKS="publishAllToSonatypeAndCommit"
+          else
+            if [[ "$MSG" == *"[publish compiler]"* ]]; then TASKS="$TASKS :compiler:publishToSonatypeAndCommit"; fi
+            if [[ "$MSG" == *"[publish annotations]"* ]]; then TASKS="$TASKS :annotations:publishToSonatypeAndCommit"; fi
+            if [[ "$MSG" == *"[publish idea-plugin]"* ]]; then TASKS="$TASKS :idea-plugin:publishPlugin"; fi
+            if [[ "$MSG" == *"[publish gradle-plugin]"* ]]; then TASKS="$TASKS :gradle-plugin:publishPlugins"; fi
+          fi
+          
+          echo "cmd=$TASKS" >> $GITHUB_OUTPUT
+
+      - name: Execute Publish
+        run: |
+          if [ -z "${{ steps.tasks.outputs.cmd }}" ]; then
+            echo "No specific publish tasks found in message."
+          else
+            ./gradlew ${{ steps.tasks.outputs.cmd }} --no-daemon
+          fi
