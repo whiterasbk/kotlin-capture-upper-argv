@@ -35,12 +35,12 @@ fun repositoryLayer(traceId: String) {
 ```
 
 ## Features
- - Type-Safe Injection: Matches variables based on strict Kotlin type systems (including nullability checks).
- - Deep Generic Matching: Recursively checks generic type parameters (e.g., Map<String, List<Int>>).
- - Annotation Filtering: Only capture variables that have specific annotations.
- - Collection Collection: Automatically aggregate all matching variables in a scope into a List, Set, or Map.
- - Recursive Support: Safely handles recursive function calls.
- - Compile-time Validation: Reports errors/warnings if no matching variable is found for non-nullable parameters.
+- Type-Safe Injection: Matches variables based on strict Kotlin type systems (including nullability checks).
+- Deep Generic Matching: Recursively checks generic type parameters (e.g., Map<String, List<Int>>).
+- Annotation Filtering: Only capture variables that have specific annotations.
+- Collection Collection: Automatically aggregate all matching variables in a scope into a List, Set, or Map.
+- Recursive Support: Safely handles recursive function calls.
+- Compile-time Validation: Reports errors/warnings if no matching variable is found for non-nullable parameters.
 
 ## Installation
 
@@ -54,7 +54,7 @@ plugins {
 ## Usage Guide
 
 1. Simple Capture
-The plugin searches the caller's parameters for a matching type.
+   The plugin searches the caller's parameters for a matching type.
 
 ```kotlin
 fun notify(@CaptureUpperArg userId: Long = placeholder) { ... }
@@ -65,7 +65,7 @@ fun handleRequest(userId: Long) {
 ```
 
 2. Multi-Collect Mode
-If the target parameter is a collection, the plugin gathers all matching arguments.
+   If the target parameter is a collection, the plugin gathers all matching arguments.
 
 ```kotlin
 fun handle(@CaptureUpperArg(collect = true) tags: List<String> = placeholder) { ... }
@@ -76,7 +76,7 @@ fun context(role: String, category: String) {
 ```
 
 3. Annotation Filtering
-Refine the search by requiring specific annotations on the source parameters.
+   Refine the search by requiring specific annotations on the source parameters.
 
 ```kotlin
 annotation class Sensitive
@@ -101,19 +101,19 @@ fun flow(@Sensitive token: String, publicName: String) {
 
 The plugin performs static analysis and will issue compiler errors in the following cases:
 
- - E001/E002/E003: Attempting to use the plugin in init blocks, property initializers, or top-level code where no "caller parameters" exist.
- - E004: No matching variable found for a non-nullable parameter.
- - W001: Usage inside Local Functions (lambdas are supported, but local fun is discouraged due to synthetic closure conflicts).
- - W002: Forgetting to provide = placeholder or a default value (required for the plugin to take over).
+- E001/E002/E003: Attempting to use the plugin in init blocks, property initializers, or top-level code where no "caller parameters" exist.
+- E004: No matching variable found for a non-nullable parameter.
+- W001: Usage inside Local Functions (lambdas are supported, but local fun is discouraged due to synthetic closure conflicts).
+- W002: Forgetting to provide = placeholder or a default value (required for the plugin to take over).
 
 ## How it works (The IR Level)
 
 The plugin hooks into the Kotlin IR (Intermediate Representation) backend.
 
- - It scans for function calls where parameters are marked @CaptureUpperArg and are currently using their default values.
- - It looks up the IR tree to find the IrFunction currently being compiled (the "caller").
- - It filters the caller's valueParameters based on your specified predicates.
- - It rewrites the IrCall arguments, replacing the default value with an IrGetValue of the captured parameter.
+- It scans for function calls where parameters are marked @CaptureUpperArg and are currently using their default values.
+- It looks up the IR tree to find the IrFunction currently being compiled (the "caller").
+- It filters the caller's valueParameters based on your specified predicates.
+- It rewrites the IrCall arguments, replacing the default value with an IrGetValue of the captured parameter.
 
 
 
