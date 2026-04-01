@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: 'Manual Target (all, compiler, annotations, idea, gradle)'
+        description: 'Manual Target (all, compiler, annotations, idea-plugin, gradle-plugin)'
         default: 'all'
 
 jobs:
