@@ -117,7 +117,7 @@ subprojects {
         }
 
         pluginManager.withPlugin("signing") {
-            val rawKey = findSecret("GPG_PRIVATE_KEY", "gpg.privateKey")
+            val rawKey = findSecret("GPG_PRIVATE_KEY", "gpg.private-key")
             val password = findSecret("GPG_PASSWORD", "gpg.password")
 
             if (rawKey.isPresent) {

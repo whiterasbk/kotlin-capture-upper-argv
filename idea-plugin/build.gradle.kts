@@ -88,9 +88,9 @@ tasks {
     }
 
     signPlugin {
-        certificateChain.set(findSecret("JB_CERTIFICATE_CHAIN", "jetbrains.certificateChain"))
-        privateKey.set(findSecret("JB_PRIVATE_KEY", "jetbrains.privateKey"))
-        password.set(findSecret("JB_PASSWORD", "jetbrains.privateKeyPassword"))
+        certificateChain.set(findSecret("JB_CERTIFICATE_CHAIN", "jetbrains.certificate-chain"))
+        privateKey.set(findSecret("JB_PRIVATE_KEY", "jetbrains.private-key"))
+        password.set(findSecret("JB_PASSWORD", "jetbrains.private-key-password"))
     }
 
     publishPlugin {
@@ -104,9 +104,9 @@ tasks {
                 throw GradleException("""
                     ❌ publish abort: missing publish configuration
                     please check env or token file ${secretFileProvider.get().asFile.absolutePath}：
-                    - marketplace (Token)
-                    - certificateChain (certificate)
-                    - privateKey (private key)
+                    - marketplace (token)
+                    - certificate chain (certificate)
+                    - private key (private key)
                 """.trimIndent())
             }
         }
