@@ -101,9 +101,12 @@ gradlePlugin {
     }
 }
 
-java {
-    withSourcesJar()
-    withJavadocJar()
+publishing {
+    publications {
+        withType<MavenPublication> {
+            artifactId = providers.gradleProperty("gradle.plugin.artifact.id").get()
+        }
+    }
 }
 
 @Suppress("unchecked_cast")
