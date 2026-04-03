@@ -24,7 +24,7 @@ With CaptureUpperArg, the compiler handles this for you:
 
 ``` kotlin
 // 1. Mark your parameter
-fun log(@CaptureUpperArg traceId: String = placeholder, msg: String) {
+fun log(@CaptureUpperArg(collect = false) traceId: String = placeholder, msg: String) {
     println("[$traceId] $msg")
 }
 
@@ -57,7 +57,7 @@ plugins {
    The plugin searches the caller's parameters for a matching type.
 
 ```kotlin
-fun notify(@CaptureUpperArg userId: Long = placeholder) { ... }
+fun notify(@CaptureUpperArg(collect = false) userId: Long = placeholder) { ... }
 
 fun handleRequest(userId: Long) {
     notify() // Compiler rewrites to: notify(userId)
@@ -81,7 +81,7 @@ fun context(role: String, category: String) {
 ```kotlin
 annotation class Sensitive
 
-fun process(@CaptureUpperArg(annotations = [Sensitive::class]) secret: String = placeholder) { ... }
+fun process(@CaptureUpperArg(annotations = [Sensitive::class], collect = false) secret: String = placeholder) { ... }
 
 fun flow(@Sensitive token: String, publicName: String) {
     process() // Only 'token' is captured because it is marked @Sensitive
