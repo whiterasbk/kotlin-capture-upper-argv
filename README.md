@@ -94,7 +94,7 @@ fun flow(@Sensitive token: String, publicName: String) {
 |------------------------|-----------------|-----------------------------------------------------------------------------|
 | `annotations`          | `Array<KClass>` | Only capture variables marked with these annotations.                       |
 | `exclude`              | `Array<String>` | Ignore variables with these specific names.                                 |
-| `collect`              | `Boolean`       | Aggregate all matches into a List/Set/Map (Default: `false`).               |
+| `collect`              | `Boolean`       | Aggregate all matches into a List/Set/Map (Default: `true`).               |
 | `catchNearestCallTree` | `Boolean`       | `true`: Use immediate scope (lambdas); `false`: Use nearest named function. |
 
 ## Diagnostics & Rules
